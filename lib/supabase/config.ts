@@ -9,10 +9,10 @@ const requiredEnv = (name: string) => {
 };
 
 export const getSupabaseUrl = () =>
-	requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
+	requiredEnv("SUPABASE_URL");
 
 export const getSupabaseAnonKey = () =>
-	requiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+	requiredEnv("SUPABASE_ANON_KEY");
 
 export const getAuthAppUrl = () =>
 	requiredEnv("NEXT_PUBLIC_AUTH_URL");

@@ -11,6 +11,7 @@ Locked assumptions:
 - `public.auth_resolve_portal()` is the database-owned portal bootstrap RPC
 - admin/client user-management rights are enforced through guarded RPCs plus trusted server orchestration
 - app-specific permissions will move to the future access-control project
+- this auth app does not expose Supabase URL or publishable key through `NEXT_PUBLIC_*`
 
 Companion planning docs live in:
 

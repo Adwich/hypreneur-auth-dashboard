@@ -11,6 +11,7 @@ Initial implementation created:
 - shared cookie-domain support added
 - login, forgot-password, update-password, update-email, callback, logout, and portal-select routes added
 - explicit access-denied route added for authenticated but unprovisioned users
+- auth app updated to use server-only `SUPABASE_URL` and `SUPABASE_ANON_KEY`
 
 Validation status:
 

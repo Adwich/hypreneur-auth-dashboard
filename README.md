@@ -26,8 +26,8 @@ Implemented initial foundation:
 Create `.env.local` with:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
 NEXT_PUBLIC_AUTH_URL=http://localhost:3000
 NEXT_PUBLIC_CLIENT_APP_URL=http://localhost:3001
 NEXT_PUBLIC_ADMIN_APP_URL=http://localhost:3002
@@ -44,3 +44,6 @@ Production values should point to:
 
 - `auth_resolve_portal()` must exist in Supabase before the full redirect flow works.
 - Invite and admin user-management orchestration is intentionally not in this repo yet.
+- This auth app now reads Supabase URL and publishable key from server-only env vars.
+- The dashboards still use browser Supabase clients today, so removing `NEXT_PUBLIC_*`
+  from those apps requires a broader server-only data access refactor.
