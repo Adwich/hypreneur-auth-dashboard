@@ -6,19 +6,6 @@ type AuthShellProps = {
 	title: string;
 	subtitle?: string;
 	children: ReactNode;
-	portal?: string | null;
-};
-
-const getPortalLabel = (portal?: string | null) => {
-	if (portal === "admin") {
-		return "Admin workspace";
-	}
-
-	if (portal === "client") {
-		return "Client workspace";
-	}
-
-	return null;
 };
 
 export function AuthShell({
@@ -26,10 +13,7 @@ export function AuthShell({
 	title,
 	subtitle,
 	children,
-	portal,
 }: AuthShellProps) {
-	const portalLabel = getPortalLabel(portal);
-
 	return (
 		<main className="shell">
 			<section className="auth-panel">
@@ -42,9 +26,6 @@ export function AuthShell({
 						priority
 						className="brand-mark"
 					/>
-					{portalLabel ? (
-						<span className="portal-chip">{portalLabel}</span>
-					) : null}
 				</div>
 				<section className="card">
 					{eyebrow ? (

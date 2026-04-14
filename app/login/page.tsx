@@ -17,10 +17,7 @@ export default async function LoginPage({
 
 	return (
 		<AuthShell
-			eyebrow="Account access"
-			title="Sign in to Hypreneur"
-			subtitle="Use your Hypreneur account to continue to the correct workspace."
-			portal={portal}
+			title="Sign in"
 		>
 				{error ? (
 					<div className="notice error">{error}</div>

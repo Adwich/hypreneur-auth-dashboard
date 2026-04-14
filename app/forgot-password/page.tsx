@@ -21,7 +21,6 @@ export default async function ForgotPasswordPage({
 			eyebrow="Password recovery"
 			title="Reset your password"
 			subtitle="Enter the email address linked to your Hypreneur account."
-			portal={portal}
 		>
 				{error ? (
 					<div className="notice error">{error}</div>
