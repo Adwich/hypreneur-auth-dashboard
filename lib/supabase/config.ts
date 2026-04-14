@@ -1,0 +1,27 @@
+const requiredEnv = (name: string) => {
+	const value = process.env[name];
+
+	if (!value) {
+		throw new Error(`Missing required environment variable: ${name}`);
+	}
+
+	return value;
+};
+
+export const getSupabaseUrl = () =>
+	requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
+
+export const getSupabaseAnonKey = () =>
+	requiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+
+export const getAuthAppUrl = () =>
+	requiredEnv("NEXT_PUBLIC_AUTH_URL");
+
+export const getClientAppUrl = () =>
+	requiredEnv("NEXT_PUBLIC_CLIENT_APP_URL");
+
+export const getAdminAppUrl = () =>
+	requiredEnv("NEXT_PUBLIC_ADMIN_APP_URL");
+
+export const getCookieDomain = () =>
+	process.env.AUTH_COOKIE_DOMAIN || ".hypreneur.space";
