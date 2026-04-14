@@ -1,3 +1,5 @@
+import { AuthShell } from "../auth-shell";
+
 type PageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -13,14 +15,11 @@ export default async function UpdatePasswordPage({
 	const error = firstValue(params.error);
 
 	return (
-		<main className="shell">
-			<section className="card">
-				<p className="eyebrow">Recovery</p>
-				<h1 className="title">Choose A New Password</h1>
-				<p className="subtitle">
-					This page expects a valid recovery session already established
-					through the auth callback.
-				</p>
+		<AuthShell
+			eyebrow="Password recovery"
+			title="Set a new password"
+			subtitle="Choose a new password for your Hypreneur account."
+		>
 				{error ? (
 					<div className="notice error">{error}</div>
 				) : null}
@@ -47,7 +46,6 @@ export default async function UpdatePasswordPage({
 						</button>
 					</div>
 				</form>
-			</section>
-		</main>
+		</AuthShell>
 	);
 }

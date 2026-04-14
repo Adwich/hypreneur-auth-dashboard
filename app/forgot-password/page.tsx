@@ -1,3 +1,5 @@
+import { AuthShell } from "../auth-shell";
+
 type PageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -15,14 +17,12 @@ export default async function ForgotPasswordPage({
 	const portal = firstValue(params.portal);
 
 	return (
-		<main className="shell">
-			<section className="card">
-				<p className="eyebrow">Recovery</p>
-				<h1 className="title">Reset Password</h1>
-				<p className="subtitle">
-					Request a recovery link. The email will send you back to this
-					auth app.
-				</p>
+		<AuthShell
+			eyebrow="Password recovery"
+			title="Reset your password"
+			subtitle="Enter the email address linked to your Hypreneur account."
+			portal={portal}
+		>
 				{error ? (
 					<div className="notice error">{error}</div>
 				) : null}
@@ -58,7 +58,6 @@ export default async function ForgotPasswordPage({
 						</button>
 					</div>
 				</form>
-			</section>
-		</main>
+		</AuthShell>
 	);
 }

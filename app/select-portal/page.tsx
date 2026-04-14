@@ -5,6 +5,7 @@ import {
 	getPortalUrl,
 	resolvePortal,
 } from "@/lib/auth/portal";
+import { AuthShell } from "../auth-shell";
 
 export default async function SelectPortalPage() {
 	const supabase = await createSupabaseServerClient();
@@ -21,13 +22,11 @@ export default async function SelectPortalPage() {
 	}
 
 	return (
-		<main className="shell">
-			<section className="card">
-				<p className="eyebrow">Portal Select</p>
-				<h1 className="title">Choose A Portal</h1>
-				<p className="subtitle">
-					This account has access to more than one workspace.
-				</p>
+		<AuthShell
+			eyebrow="Workspace"
+			title="Choose your workspace"
+			subtitle="This account can access more than one Hypreneur workspace."
+		>
 				<div className="stack">
 					{resolution.portals.map(portal => (
 						<a
@@ -38,11 +37,10 @@ export default async function SelectPortalPage() {
 							<span style={{ textTransform: "capitalize" }}>
 								{portal}
 							</span>
-							<span className="small">Open workspace</span>
+							<span className="small">Open</span>
 						</a>
 					))}
 				</div>
-			</section>
-		</main>
+		</AuthShell>
 	);
 }

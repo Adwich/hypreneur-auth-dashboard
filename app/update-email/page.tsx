@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthShell } from "../auth-shell";
 
 type PageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -16,14 +17,11 @@ export default async function UpdateEmailPage({
 	const success = firstValue(params.success);
 
 	return (
-		<main className="shell">
-			<section className="card">
-				<p className="eyebrow">Profile</p>
-				<h1 className="title">Update Email</h1>
-				<p className="subtitle">
-					Changing email should stay anchored on the auth app, then route
-					back to the correct portal after confirmation.
-				</p>
+		<AuthShell
+			eyebrow="Profile"
+			title="Change your email"
+			subtitle="Use the address you want to use for future Hypreneur sign-ins."
+		>
 				{error ? (
 					<div className="notice error">{error}</div>
 				) : null}
@@ -52,7 +50,6 @@ export default async function UpdateEmailPage({
 						</button>
 					</div>
 				</form>
-			</section>
-		</main>
+		</AuthShell>
 	);
 }

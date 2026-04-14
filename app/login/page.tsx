@@ -1,3 +1,5 @@
+import { AuthShell } from "../auth-shell";
+
 type PageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -14,13 +16,12 @@ export default async function LoginPage({
 	const portal = firstValue(params.portal);
 
 	return (
-		<main className="shell">
-			<section className="card">
-				<p className="eyebrow">Hypreneur</p>
-				<h1 className="title">Unified Login</h1>
-				<p className="subtitle">
-					Sign in once, then route into the correct dashboard.
-				</p>
+		<AuthShell
+			eyebrow="Account access"
+			title="Sign in to Hypreneur"
+			subtitle="Use your Hypreneur account to continue to the correct workspace."
+			portal={portal}
+		>
 				{error ? (
 					<div className="notice error">{error}</div>
 				) : null}
@@ -63,7 +64,6 @@ export default async function LoginPage({
 						</button>
 					</div>
 				</form>
-			</section>
-		</main>
+		</AuthShell>
 	);
 }
