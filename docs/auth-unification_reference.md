@@ -20,3 +20,7 @@ Companion planning docs live in:
 Current dependency on database rollout:
 
 - the SQL draft for `auth_resolve_portal()` must be applied before this app can resolve destinations correctly
+
+Current deployment blocker:
+
+- Vercel project bootstrap is waiting on Vercel CLI device authentication for this environment
