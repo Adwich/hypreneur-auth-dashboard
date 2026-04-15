@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
 		);
 	}
 
-	const callbackUrl = new URL("/auth/callback", getAuthAppUrl());
+	const redirectUrl = new URL("/update-email", getAuthAppUrl());
 	const { error } = await supabase.auth.updateUser(
 		{ email },
-		{ emailRedirectTo: callbackUrl.toString() }
+		{ emailRedirectTo: redirectUrl.toString() }
 	);
 
 	if (error) {

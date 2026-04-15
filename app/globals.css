@@ -179,6 +179,22 @@ a:hover {
 	box-shadow: none;
 }
 
+.divider {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: var(--border);
+}
+
 .notice {
 	border-radius: 16px;
 	padding: 13px 15px;
@@ -225,6 +241,11 @@ a:hover {
 
 .small {
 	font-size: 14px;
+	color: var(--muted);
+}
+
+.muted {
+	font-size: 13px;
 	color: var(--muted);
 }
 

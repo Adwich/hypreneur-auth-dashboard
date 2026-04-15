@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthAppUrl } from "@/lib/supabase/config";
 
-const forgotPasswordUrl = (portal: string | null) => {
-	const url = new URL("/forgot-password", getAuthAppUrl());
+const loginUrl = (portal: string | null) => {
+	const url = new URL("/login", getAuthAppUrl());
 	if (portal) {
 		url.searchParams.set("portal", portal);
 	}
@@ -16,22 +17,26 @@ export async function POST(request: NextRequest) {
 	const portal = String(formData.get("portal") ?? "").trim() || null;
 
 	if (!email) {
-		const url = forgotPasswordUrl(portal);
+		const url = loginUrl(portal);
 		url.searchParams.set("error", "Email is required");
 		return NextResponse.redirect(url, 303);
 	}
 
 	const supabase = await createSupabaseServerClient();
-	const redirectUrl = new URL("/update-password", getAuthAppUrl());
+	const redirectUrl = new URL("/", getAuthAppUrl());
 	if (portal) {
 		redirectUrl.searchParams.set("portal", portal);
 	}
 
-	const { error } = await supabase.auth.resetPasswordForEmail(email, {
-		redirectTo: redirectUrl.toString(),
+	const { error } = await supabase.auth.signInWithOtp({
+		email,
+		options: {
+			shouldCreateUser: false,
+			emailRedirectTo: redirectUrl.toString(),
+		},
 	});
 
-	const responseUrl = forgotPasswordUrl(portal);
+	const responseUrl = loginUrl(portal);
 
 	if (error) {
 		responseUrl.searchParams.set("error", error.message);
@@ -40,7 +45,7 @@ export async function POST(request: NextRequest) {
 
 	responseUrl.searchParams.set(
 		"success",
-		"Reset email sent. Check your inbox and spam folder."
+		"Magic link sent. Check your inbox and spam folder."
 	);
 	return NextResponse.redirect(responseUrl, 303);
 }

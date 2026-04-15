@@ -13,12 +13,16 @@ export default async function LoginPage({
 }: PageProps) {
 	const params = await searchParams;
 	const error = firstValue(params.error);
+	const success = firstValue(params.success);
 	const portal = firstValue(params.portal);
 
 	return (
 		<AuthShell
 			title="Sign in"
 		>
+				{success ? (
+					<div className="notice success">{success}</div>
+				) : null}
 				{error ? (
 					<div className="notice error">{error}</div>
 				) : null}
@@ -58,6 +62,41 @@ export default async function LoginPage({
 						</a>
 						<button className="button" type="submit">
 							Sign in
+						</button>
+					</div>
+				</form>
+				<div className="divider">
+					<span>or</span>
+				</div>
+				<form
+					className="form"
+					method="post"
+					action="/api/auth/magic-link"
+				>
+					<input
+						type="hidden"
+						name="portal"
+						value={portal ?? ""}
+					/>
+					<div className="field">
+						<label htmlFor="magic-link-email">
+							Email
+						</label>
+						<input
+							id="magic-link-email"
+							name="email"
+							type="email"
+							required
+							autoComplete="email"
+						/>
+					</div>
+					<div className="actions">
+						<span className="muted">
+							Request a sign-in link instead of using
+							your password.
+						</span>
+						<button className="button secondary" type="submit">
+							Send magic link
 						</button>
 					</div>
 				</form>

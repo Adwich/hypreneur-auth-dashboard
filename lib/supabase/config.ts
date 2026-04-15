@@ -25,3 +25,22 @@ export const getAdminAppUrl = () =>
 
 export const getCookieDomain = () =>
 	process.env.AUTH_COOKIE_DOMAIN || ".hypreneur.space";
+
+const normalizeOrigin = (value: string) => new URL(value).origin;
+
+const allowedRedirectOrigins = () =>
+	new Set([
+		normalizeOrigin(getAuthAppUrl()),
+		normalizeOrigin(getClientAppUrl()),
+		normalizeOrigin(getAdminAppUrl()),
+	]);
+
+export const isAllowedRedirectUrl = (value: string) => {
+	try {
+		return allowedRedirectOrigins().has(
+			normalizeOrigin(value)
+		);
+	} catch {
+		return false;
+	}
+};
