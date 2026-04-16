@@ -13,6 +13,7 @@ export default async function UpdatePasswordPage({
 }: PageProps) {
 	const params = await searchParams;
 	const error = firstValue(params.error);
+	const portal = firstValue(params.portal);
 
 	return (
 		<AuthShell
@@ -28,6 +29,11 @@ export default async function UpdatePasswordPage({
 					method="post"
 					action="/api/auth/update-password"
 				>
+					<input
+						type="hidden"
+						name="portal"
+						value={portal ?? ""}
+					/>
 					<div className="field">
 						<label htmlFor="password">New password</label>
 						<input
@@ -40,7 +46,9 @@ export default async function UpdatePasswordPage({
 						/>
 					</div>
 					<div className="actions">
-						<a href="/login">Back to login</a>
+						<a href={`/login${portal ? `?portal=${portal}` : ""}`}>
+							Back to login
+						</a>
 						<button className="button" type="submit">
 							Update password
 						</button>

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 		);
 	}
 
-	const supabase = await createSupabaseServerClient();
+	const supabase = await createSupabaseServerClient({ portal });
 	const { error } = await supabase.auth.verifyOtp({
 		token_hash: tokenHash,
 		type,

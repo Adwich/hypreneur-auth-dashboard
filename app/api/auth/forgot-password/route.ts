@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 		return NextResponse.redirect(url, 303);
 	}
 
-	const supabase = await createSupabaseServerClient();
+	const supabase = await createSupabaseServerClient({ portal });
 	const redirectUrl = new URL("/update-password", getAuthAppUrl());
 	if (portal) {
 		redirectUrl.searchParams.set("portal", portal);

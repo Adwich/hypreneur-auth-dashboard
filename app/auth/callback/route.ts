@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 	const code = url.searchParams.get("code");
 	const next = url.searchParams.get("next");
 	const portal = url.searchParams.get("portal");
-	const supabase = await createSupabaseServerClient();
+	const supabase = await createSupabaseServerClient({ portal });
 
 	if (!code) {
 		return NextResponse.redirect(

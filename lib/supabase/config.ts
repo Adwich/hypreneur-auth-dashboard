@@ -26,6 +26,34 @@ export const getAdminAppUrl = () =>
 export const getCookieDomain = () =>
 	process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined;
 
+const normalizePortal = (portal?: string | null) =>
+	portal === "admin" || portal === "client"
+		? portal
+		: null;
+
+export const getPortalCookieName = (portal?: string | null) => {
+	const normalizedPortal = normalizePortal(portal);
+
+	if (normalizedPortal === "admin") {
+		return (
+			process.env.AUTH_COOKIE_NAME_ADMIN?.trim() ||
+			"sb-hypreneur-admin-auth-token"
+		);
+	}
+
+	if (normalizedPortal === "client") {
+		return (
+			process.env.AUTH_COOKIE_NAME_CLIENT?.trim() ||
+			"sb-hypreneur-client-auth-token"
+		);
+	}
+
+	return (
+		process.env.AUTH_COOKIE_NAME?.trim() ||
+		"sb-hypreneur-auth-token"
+	);
+};
+
 const normalizeOrigin = (value: string) => new URL(value).origin;
 
 const allowedRedirectOrigins = () =>

@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
 	getCookieDomain,
+	getPortalCookieName,
 	getSupabaseAnonKey,
 	getSupabaseUrl,
 } from "./config";
@@ -12,11 +13,15 @@ type SupabaseCookie = {
 	options?: CookieOptions;
 };
 
-const withCookieDefaults = (options?: CookieOptions) => {
+const withCookieDefaults = (
+	options?: CookieOptions,
+	cookieName?: string
+) => {
 	const domain = options?.domain ?? getCookieDomain();
 
 	return {
 		...options,
+		...(cookieName ? { name: cookieName } : {}),
 		...(domain ? { domain } : {}),
 		path: options?.path ?? "/",
 		sameSite: options?.sameSite ?? "lax",
@@ -31,12 +36,13 @@ export const updateSession = async (request: NextRequest) => {
 	let response = NextResponse.next({
 		request,
 	});
+	const cookieName = getPortalCookieName(null);
 
 	const supabase = createServerClient(
 		getSupabaseUrl(),
 		getSupabaseAnonKey(),
 		{
-			cookieOptions: withCookieDefaults(),
+			cookieOptions: withCookieDefaults(undefined, cookieName),
 			cookies: {
 				getAll() {
 					return request.cookies.getAll();
@@ -54,7 +60,10 @@ export const updateSession = async (request: NextRequest) => {
 						response.cookies.set(
 							cookie.name,
 							cookie.value,
-							withCookieDefaults(cookie.options)
+							withCookieDefaults(
+								cookie.options,
+								cookieName
+							)
 						);
 					}
 				},

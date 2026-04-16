@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 		);
 	}
 
-	const supabase = await createSupabaseServerClient();
+	const supabase = await createSupabaseServerClient({ portal });
 	const { error } = await supabase.auth.signInWithPassword({
 		email,
 		password,
