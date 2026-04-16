@@ -12,16 +12,20 @@ type SupabaseCookie = {
 	options?: CookieOptions;
 };
 
-const withCookieDefaults = (options?: CookieOptions) => ({
-	...options,
-	domain: options?.domain ?? getCookieDomain(),
-	path: options?.path ?? "/",
-	sameSite: options?.sameSite ?? "lax",
-	secure:
-		typeof options?.secure === "boolean"
-			? options.secure
-			: process.env.NODE_ENV === "production",
-});
+const withCookieDefaults = (options?: CookieOptions) => {
+	const domain = options?.domain ?? getCookieDomain();
+
+	return {
+		...options,
+		...(domain ? { domain } : {}),
+		path: options?.path ?? "/",
+		sameSite: options?.sameSite ?? "lax",
+		secure:
+			typeof options?.secure === "boolean"
+				? options.secure
+				: process.env.NODE_ENV === "production",
+	};
+};
 
 export const createSupabaseServerClient = async () => {
 	const cookieStore = await cookies();
