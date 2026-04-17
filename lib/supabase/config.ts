@@ -24,7 +24,10 @@ export const getAdminAppUrl = () =>
 	requiredEnv("NEXT_PUBLIC_ADMIN_APP_URL");
 
 export const getCookieDomain = () =>
-	process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined;
+	process.env.AUTH_COOKIE_DOMAIN?.trim() ||
+	(process.env.NODE_ENV === "production"
+		? ".hypreneur.space"
+		: undefined);
 
 const normalizePortal = (portal?: string | null) =>
 	portal === "admin" || portal === "client"
