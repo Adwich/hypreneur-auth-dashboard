@@ -11,6 +11,24 @@ import {
 	resolvePortal,
 } from "@/lib/auth/portal";
 
+const normalizePortal = (value: string | null) =>
+	value === "admin" || value === "client" ? value : null;
+
+const getPortalFromRedirectTo = (
+	redirectTo: string | null
+) => {
+	if (!redirectTo) {
+		return null;
+	}
+
+	try {
+		const url = new URL(redirectTo);
+		return normalizePortal(url.searchParams.get("portal"));
+	} catch {
+		return null;
+	}
+};
+
 const getSafeRedirectUrl = (
 	redirectTo: string | null,
 	fallbackPath: string
@@ -57,7 +75,9 @@ export async function GET(request: NextRequest) {
 	const tokenHash = url.searchParams.get("token_hash");
 	const type = url.searchParams.get("type") as EmailOtpType | null;
 	const redirectTo = url.searchParams.get("redirect_to");
-	const portal = url.searchParams.get("portal");
+	const portal =
+		normalizePortal(url.searchParams.get("portal")) ??
+		getPortalFromRedirectTo(redirectTo);
 	const next = url.searchParams.get("next");
 
 	if (!tokenHash || !type) {
