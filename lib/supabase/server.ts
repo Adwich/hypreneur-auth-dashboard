@@ -43,6 +43,11 @@ export const createSupabaseServerClient = async (options?: {
 
 	return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
 		cookieOptions: withCookieDefaults(undefined, cookieName),
+		// Email magic links are verified server-side via verifyOtp({ token_hash }).
+		// The implicit flow makes that verification stateless — it does not depend on
+		// a PKCE code_verifier cookie surviving from the "send link" request to the
+		// click, which was silently failing and bouncing users to /login.
+		auth: { flowType: "implicit" },
 		cookies: {
 			getAll() {
 				return cookieStore.getAll();
