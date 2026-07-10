@@ -107,10 +107,11 @@ export async function GET(request: NextRequest) {
 	}
 
 	if (type === "recovery" || type === "invite") {
-		const destination = getSafeRedirectUrl(
-			redirectTo,
-			"/update-password"
-		);
+		// Invited / recovering users MUST set a password first. Never honor
+		// redirect_to here — a Supabase dashboard invite's redirect_to is the
+		// Site URL (an allowed origin), so getSafeRedirectUrl would bypass the
+		// set-password page and the user would never get a working password.
+		const destination = new URL("/update-password", getAuthAppUrl());
 		if (portal) {
 			destination.searchParams.set("portal", portal);
 		}

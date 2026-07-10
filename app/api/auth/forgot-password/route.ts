@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthAppUrl } from "@/lib/supabase/config";
+import { createClient } from "@supabase/supabase-js";
+import {
+	getAuthAppUrl,
+	getSupabaseAnonKey,
+	getSupabaseUrl,
+} from "@/lib/supabase/config";
 
 const forgotPasswordUrl = (portal: string | null) => {
 	const url = new URL("/forgot-password", getAuthAppUrl());
@@ -21,7 +25,18 @@ export async function POST(request: NextRequest) {
 		return NextResponse.redirect(url, 303);
 	}
 
-	const supabase = await createSupabaseServerClient({ portal });
+	// Use a plain implicit-flow client (not the ssr client, which hardcodes
+	// flowType: "pkce"). A pkce_ recovery token cannot be turned into a session
+	// by /auth/confirm's verifyOtp, so /update-password would see no session
+	// ("Recovery session expired"). Implicit → stateless, verifiable token.
+	const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+		auth: {
+			flowType: "implicit",
+			persistSession: false,
+			autoRefreshToken: false,
+			detectSessionInUrl: false,
+		},
+	});
 	const redirectUrl = new URL("/update-password", getAuthAppUrl());
 	if (portal) {
 		redirectUrl.searchParams.set("portal", portal);
