@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthAppUrl } from "@/lib/supabase/config";
+import {
+	getAuthAppUrl,
+	getSupabaseAnonKey,
+	getSupabaseUrl,
+} from "@/lib/supabase/config";
 
 const loginUrl = (portal: string | null) => {
 	const url = new URL("/login", getAuthAppUrl());
@@ -22,7 +26,21 @@ export async function POST(request: NextRequest) {
 		return NextResponse.redirect(url, 303);
 	}
 
-	const supabase = await createSupabaseServerClient({ portal });
+	// @supabase/ssr hardcodes flowType: "pkce", which makes GoTrue email a
+	// pkce_ token_hash. Those cannot be exchanged for a session by the
+	// verifyOtp({ token_hash }) pattern used in /auth/confirm — verifyOtp
+	// returns no session (and no error), so logins silently fail. Send the
+	// magic link from a plain implicit-flow client so the emailed token_hash
+	// is stateless and verifiable server-side. No session is created here, so
+	// this client needs no cookie persistence.
+	const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+		auth: {
+			flowType: "implicit",
+			persistSession: false,
+			autoRefreshToken: false,
+			detectSessionInUrl: false,
+		},
+	});
 	const redirectUrl = new URL("/", getAuthAppUrl());
 	if (portal) {
 		redirectUrl.searchParams.set("portal", portal);
