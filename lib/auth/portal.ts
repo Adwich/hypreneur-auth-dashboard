@@ -150,6 +150,21 @@ const preferredPortalAllowed = (
 		? resolution.portals.includes(preferredPortal)
 		: false;
 
+export const getEffectivePortal = (
+	resolution: PortalResolution,
+	preferredPortal: string | null
+): PortalName | null => {
+	if (preferredPortalAllowed(resolution, preferredPortal)) {
+		return preferredPortal as PortalName;
+	}
+
+	if (resolution.default_portal) {
+		return resolution.default_portal;
+	}
+
+	return null;
+};
+
 export const getPortalUrl = (
 	portal: PortalName
 ) => {

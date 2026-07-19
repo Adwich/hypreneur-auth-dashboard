@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type {
+	EmailOtpType,
+	SupabaseClient,
+} from "@supabase/supabase-js";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -7,9 +10,47 @@ import {
 	isAllowedRedirectUrl,
 } from "@/lib/supabase/config";
 import {
+	getEffectivePortal,
 	getPortalRedirectTarget,
 	resolvePortal,
+	type PortalResolution,
 } from "@/lib/auth/portal";
+
+// verifyOtp writes the session under the cookie named by `preferredPortal`
+// (or the default cookie when it's null — e.g. a magic link whose redirect_to
+// carries no ?portal). But we redirect the user to their resolved portal's app,
+// which reads that portal's cookie. When those differ the destination can't see
+// the session and bounces to /login. Re-establish the session under the portal
+// we're actually sending them to so the cookie name matches.
+const finalizePortalRedirect = async (
+	supabase: SupabaseClient,
+	resolution: PortalResolution,
+	preferredPortal: string | null
+) => {
+	const effectivePortal = getEffectivePortal(
+		resolution,
+		preferredPortal
+	);
+
+	if (effectivePortal && effectivePortal !== preferredPortal) {
+		const { data } = await supabase.auth.getSession();
+		const session = data.session;
+
+		if (session) {
+			const portalClient = await createSupabaseServerClient({
+				portal: effectivePortal,
+			});
+			await portalClient.auth.setSession({
+				access_token: session.access_token,
+				refresh_token: session.refresh_token,
+			});
+		}
+	}
+
+	return NextResponse.redirect(
+		getPortalRedirectTarget(resolution, preferredPortal)
+	);
+};
 
 const normalizePortal = (value: string | null) =>
 	value === "admin" || value === "client" ? value : null;
@@ -122,9 +163,7 @@ export async function GET(request: NextRequest) {
 		shouldResolvePortalAfterVerification(type, redirectTo)
 	) {
 		const resolution = await resolvePortal(supabase);
-		return NextResponse.redirect(
-			getPortalRedirectTarget(resolution, portal)
-		);
+		return finalizePortalRedirect(supabase, resolution, portal);
 	}
 
 	if (redirectTo) {
@@ -140,7 +179,5 @@ export async function GET(request: NextRequest) {
 	}
 
 	const resolution = await resolvePortal(supabase);
-	return NextResponse.redirect(
-		getPortalRedirectTarget(resolution, portal)
-	);
+	return finalizePortalRedirect(supabase, resolution, portal);
 }
