@@ -7,14 +7,34 @@ import type {
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
 	getAuthAppUrl,
+	getMiraSupplierUrl,
+	getMiraWarehouseUrl,
 	isAllowedRedirectUrl,
+	isMiraPortalUrl,
 } from "@/lib/supabase/config";
 import {
 	getEffectivePortal,
 	getPortalRedirectTarget,
+	getPortalUrl,
+	isMiraPortal,
 	resolvePortal,
+	type PortalName,
 	type PortalResolution,
 } from "@/lib/auth/portal";
+
+// Cross-origin handoff for mira portals (own Vercel projects — session cookies
+// can't travel across origins). Append access + refresh tokens as a URL fragment;
+// the mira portal's /auth/finalize page reads window.location.hash and calls
+// supabase.auth.setSession() on its own origin.
+const buildMiraHandoffUrl = (portalUrl: string, accessToken: string, refreshToken: string): string => {
+	const url = new URL(portalUrl);
+	// If the mira portal URL came in as a bare origin, land on /auth/finalize.
+	if (url.pathname === "/" || url.pathname === "") {
+		url.pathname = "/auth/finalize";
+	}
+	url.hash = `access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;
+	return url.toString();
+};
 
 // verifyOtp writes the session under the cookie named by `preferredPortal`
 // (or the default cookie when it's null — e.g. a magic link whose redirect_to
@@ -22,6 +42,9 @@ import {
 // which reads that portal's cookie. When those differ the destination can't see
 // the session and bounces to /login. Re-establish the session under the portal
 // we're actually sending them to so the cookie name matches.
+//
+// Mira portals live on their own origin — cookies can't travel. For them we
+// pass the session tokens as a URL fragment handoff instead.
 const finalizePortalRedirect = async (
 	supabase: SupabaseClient,
 	resolution: PortalResolution,
@@ -32,6 +55,29 @@ const finalizePortalRedirect = async (
 		preferredPortal
 	);
 
+	// Mira handoff: fragment-based session passing for off-domain portals.
+	if (effectivePortal && isMiraPortal(effectivePortal)) {
+		const portalUrl = getPortalUrl(effectivePortal);
+		if (portalUrl) {
+			const { data } = await supabase.auth.getSession();
+			const session = data.session;
+			if (session) {
+				return NextResponse.redirect(
+					buildMiraHandoffUrl(
+						portalUrl,
+						session.access_token,
+						session.refresh_token
+					)
+				);
+			}
+			// No session (shouldn't happen after verifyOtp OK) — send user to
+			// the mira portal's login so they can retry.
+			return NextResponse.redirect(new URL("/login", portalUrl).toString());
+		}
+	}
+
+	// Same-domain portals (admin / client): rewrite the cookie under the
+	// destination portal's name so the destination can read the session.
 	if (effectivePortal && effectivePortal !== preferredPortal) {
 		const { data } = await supabase.auth.getSession();
 		const session = data.session;
@@ -52,8 +98,17 @@ const finalizePortalRedirect = async (
 	);
 };
 
-const normalizePortal = (value: string | null) =>
-	value === "admin" || value === "client" ? value : null;
+const normalizePortal = (value: string | null): PortalName | null => {
+	if (
+		value === "admin" ||
+		value === "client" ||
+		value === "mira-warehouse" ||
+		value === "mira-supplier"
+	) {
+		return value;
+	}
+	return null;
+};
 
 const getPortalFromRedirectTo = (
 	redirectTo: string | null
@@ -64,7 +119,24 @@ const getPortalFromRedirectTo = (
 
 	try {
 		const url = new URL(redirectTo);
-		return normalizePortal(url.searchParams.get("portal"));
+		// Explicit ?portal= wins (admin / client flows).
+		const explicit = normalizePortal(
+			url.searchParams.get("portal")
+		);
+		if (explicit) return explicit;
+
+		// Infer mira portal from the redirect_to origin itself.
+		const origin = url.origin;
+		const warehouse = getMiraWarehouseUrl();
+		if (warehouse && origin === new URL(warehouse).origin) {
+			return "mira-warehouse" as const;
+		}
+		const supplier = getMiraSupplierUrl();
+		if (supplier && origin === new URL(supplier).origin) {
+			return "mira-supplier" as const;
+		}
+
+		return null;
 	} catch {
 		return null;
 	}
@@ -159,8 +231,16 @@ export async function GET(request: NextRequest) {
 		return NextResponse.redirect(destination);
 	}
 
+	// When redirect_to points at a mira portal, we MUST route through
+	// finalizePortalRedirect so the session is passed as a URL fragment
+	// (cross-origin → no cookie travel). getSafeRedirectUrl would send the
+	// user there without any auth and they'd bounce back to login.
+	const redirectIsMiraPortal =
+		redirectTo && isMiraPortalUrl(redirectTo);
+
 	if (
-		shouldResolvePortalAfterVerification(type, redirectTo)
+		shouldResolvePortalAfterVerification(type, redirectTo) ||
+		redirectIsMiraPortal
 	) {
 		const resolution = await resolvePortal(supabase);
 		return finalizePortalRedirect(supabase, resolution, portal);

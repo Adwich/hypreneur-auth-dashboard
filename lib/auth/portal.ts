@@ -3,9 +3,31 @@ import {
 	getAdminAppUrl,
 	getAuthAppUrl,
 	getClientAppUrl,
+	getMiraSupplierUrl,
+	getMiraWarehouseUrl,
 } from "@/lib/supabase/config";
 
-export type PortalName = "admin" | "client";
+export type PortalName =
+	| "admin"
+	| "client"
+	| "mira-warehouse"
+	| "mira-supplier";
+
+const ALL_PORTAL_NAMES: PortalName[] = [
+	"admin",
+	"client",
+	"mira-warehouse",
+	"mira-supplier",
+];
+const isPortalName = (v: unknown): v is PortalName =>
+	typeof v === "string" &&
+	(ALL_PORTAL_NAMES as string[]).includes(v);
+
+export type MiraRoleRow = {
+	role: "warehouse" | "supplier" | string;
+	store_id: string;
+	label: string | null;
+};
 
 export type PortalResolution = {
 	user_id: string;
@@ -19,6 +41,7 @@ export type PortalResolution = {
 	default_client_id: string | null;
 	display_name: string | null;
 	email: string | null;
+	mira_roles: MiraRoleRow[];
 };
 
 const normalizePortals = (value: unknown): PortalName[] => {
@@ -26,9 +49,27 @@ const normalizePortals = (value: unknown): PortalName[] => {
 		return [];
 	}
 
-	return value.filter(
-		portal => portal === "admin" || portal === "client"
-	) as PortalName[];
+	return value.filter(isPortalName) as PortalName[];
+};
+
+const normalizeMiraRoles = (value: unknown): MiraRoleRow[] => {
+	if (!Array.isArray(value)) return [];
+	return value
+		.map(item => {
+			if (!item || typeof item !== "object") return null;
+			const r = item as Record<string, unknown>;
+			if (
+				typeof r.role !== "string" ||
+				typeof r.store_id !== "string"
+			)
+				return null;
+			return {
+				role: r.role,
+				store_id: r.store_id,
+				label: typeof r.label === "string" ? r.label : null,
+			};
+		})
+		.filter((r): r is MiraRoleRow => Boolean(r));
 };
 
 const normalizeClientMemberships = (
@@ -95,11 +136,9 @@ export const normalizePortalResolution = (
 		user_id:
 			typeof row.user_id === "string" ? row.user_id : "",
 		portals: normalizePortals(row.portals),
-		default_portal:
-			row.default_portal === "admin" ||
-			row.default_portal === "client"
-				? row.default_portal
-				: null,
+		default_portal: isPortalName(row.default_portal)
+			? (row.default_portal as PortalName)
+			: null,
 		internal_role:
 			typeof row.internal_role === "string"
 				? row.internal_role
@@ -117,6 +156,7 @@ export const normalizePortalResolution = (
 				: null,
 		email:
 			typeof row.email === "string" ? row.email : null,
+		mira_roles: normalizeMiraRoles(row.mira_roles),
 	};
 };
 
@@ -146,8 +186,8 @@ const preferredPortalAllowed = (
 	resolution: PortalResolution,
 	preferredPortal: string | null
 ) =>
-	preferredPortal === "admin" || preferredPortal === "client"
-		? resolution.portals.includes(preferredPortal)
+	isPortalName(preferredPortal)
+		? resolution.portals.includes(preferredPortal as PortalName)
 		: false;
 
 export const getEffectivePortal = (
@@ -165,26 +205,33 @@ export const getEffectivePortal = (
 	return null;
 };
 
-export const getPortalUrl = (
-	portal: PortalName
-) => {
-	return portal === "admin"
-		? getAdminAppUrl()
-		: getClientAppUrl();
+export const getPortalUrl = (portal: PortalName): string | null => {
+	if (portal === "admin") return getAdminAppUrl();
+	if (portal === "client") return getClientAppUrl();
+	if (portal === "mira-warehouse") return getMiraWarehouseUrl();
+	if (portal === "mira-supplier") return getMiraSupplierUrl();
+	return null;
 };
+
+// Mira portals live on their own origin — session cookies can't travel to
+// them from .hypreneur.space. The /auth/confirm handler needs to hand off
+// via URL fragment (#access_token=…&refresh_token=…) and the mira portal
+// picks it up at /auth/finalize to call setSession() on its own origin.
+export const isMiraPortal = (portal: PortalName): boolean =>
+	portal === "mira-warehouse" || portal === "mira-supplier";
 
 export const getPortalRedirectTarget = (
 	resolution: PortalResolution,
 	preferredPortal: string | null
-) => {
-	if (
-		preferredPortalAllowed(resolution, preferredPortal)
-	) {
-		return getPortalUrl(preferredPortal as PortalName);
+): string => {
+	if (preferredPortalAllowed(resolution, preferredPortal)) {
+		const url = getPortalUrl(preferredPortal as PortalName);
+		if (url) return url;
 	}
 
 	if (resolution.default_portal) {
-		return getPortalUrl(resolution.default_portal);
+		const url = getPortalUrl(resolution.default_portal);
+		if (url) return url;
 	}
 
 	if (resolution.portals.length > 1) {

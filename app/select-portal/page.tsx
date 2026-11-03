@@ -28,18 +28,22 @@ export default async function SelectPortalPage() {
 			subtitle="This account can access more than one Hypreneur workspace."
 		>
 				<div className="stack">
-					{resolution.portals.map(portal => (
-						<a
-							key={portal}
-							className="portal-link"
-							href={getPortalUrl(portal)}
-						>
-							<span style={{ textTransform: "capitalize" }}>
-								{portal}
-							</span>
-							<span className="small">Open</span>
-						</a>
-					))}
+					{resolution.portals.map(portal => {
+						const href = getPortalUrl(portal);
+						if (!href) return null;
+						return (
+							<a
+								key={portal}
+								className="portal-link"
+								href={href}
+							>
+								<span style={{ textTransform: "capitalize" }}>
+									{portal.replace("mira-", "mira / ")}
+								</span>
+								<span className="small">Open</span>
+							</a>
+						);
+					})}
 				</div>
 		</AuthShell>
 	);
