@@ -3,8 +3,23 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
 	getPortalRedirectTarget,
 	getPortalUrl,
+	isMiraPortal,
 	resolvePortal,
+	type PortalName,
 } from "@/lib/auth/portal";
+import { getAuthAppUrl } from "@/lib/supabase/config";
+
+// Mira portals live off-domain — a bare link to their origin wouldn't carry
+// the session cookie. Instead, link through /api/portal-handoff which reads
+// the current (auth-origin) session and redirects with a #access_token fragment.
+const getSelectPortalHref = (portal: PortalName): string | null => {
+	if (isMiraPortal(portal)) {
+		const url = new URL("/api/portal-handoff", getAuthAppUrl());
+		url.searchParams.set("portal", portal);
+		return url.toString();
+	}
+	return getPortalUrl(portal);
+};
 import { AuthShell } from "../auth-shell";
 
 export default async function SelectPortalPage() {
@@ -29,7 +44,7 @@ export default async function SelectPortalPage() {
 		>
 				<div className="stack">
 					{resolution.portals.map(portal => {
-						const href = getPortalUrl(portal);
+						const href = getSelectPortalHref(portal);
 						if (!href) return null;
 						return (
 							<a
