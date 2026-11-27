@@ -224,10 +224,30 @@ export async function GET(request: NextRequest) {
 		// redirect_to here — a Supabase dashboard invite's redirect_to is the
 		// Site URL (an allowed origin), so getSafeRedirectUrl would bypass the
 		// set-password page and the user would never get a working password.
-		const destination = new URL("/update-password", getAuthAppUrl());
-		if (portal) {
-			destination.searchParams.set("portal", portal);
+		//
+		// Rewrite the fresh session onto the portal-scoped cookie BEFORE the
+		// redirect: a Supabase-dashboard invite's redirect_to is always the
+		// bare Site URL (no ?portal=), so `portal` is null here. verifyOtp
+		// wrote the session under the shared `sb-hypreneur-auth-token` cookie,
+		// and the client dashboard only reads `sb-hypreneur-client-auth-token`.
+		// Without this step the user sets a password, lands on client.*, finds
+		// no session, and loops back to /login — the symptom chased for weeks.
+		const effectivePortal = portal ?? "client";
+		if (!portal) {
+			const { data } = await supabase.auth.getSession();
+			const session = data.session;
+			if (session) {
+				const portalClient = await createSupabaseServerClient({
+					portal: effectivePortal,
+				});
+				await portalClient.auth.setSession({
+					access_token: session.access_token,
+					refresh_token: session.refresh_token,
+				});
+			}
 		}
+		const destination = new URL("/update-password", getAuthAppUrl());
+		destination.searchParams.set("portal", effectivePortal);
 		return NextResponse.redirect(destination);
 	}
 
